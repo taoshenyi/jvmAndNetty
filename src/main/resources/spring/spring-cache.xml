@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util" xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.1.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.1.xsd">
+
+	<bean id="redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+		<property name="connectionFactory">
+			<bean class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+				<property name="hostName" value="${redis.host}" />
+				<property name="port" value="${redis.port} " />
+				<property name="database" value="${redis.database}" />
+				<property name="usePool" value="true" />
+				<property name="timeout" value="5000" />
+				<property name="password">
+					<null />
+				</property>
+				<property name="poolConfig">
+					<bean class="redis.clients.jedis.JedisPoolConfig">
+						<property name="maxIdle" value="${redis.maxIdle}" />
+						<property name="maxWaitMillis" value="${redis.maxWait}" />
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="redisCacheAdvice" class="com.leyou.common.cache.advice.RedisCacheAdvice">
+		<property name="template" ref="redisTemplate" />
+		<property name="enable" value="false" />
+		<property name="reConnectionTimeMinus" value="4000" />
+	</bean>
+	<aop:config>
+		<aop:pointcut expression="(execution(* *..*.dao.*Dao.*(..)))" id="pointcut_cache" />
+		<aop:aspect ref="redisCacheAdvice" order="2">
+			<aop:around method="around" pointcut-ref="pointcut_cache" />
+		</aop:aspect>
+	</aop:config>
+
+</beans>
